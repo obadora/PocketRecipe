@@ -31,7 +31,9 @@ Authentication is handled via Supabase with three context-specific clients:
 
 ### Database (Prisma + Supabase PostgreSQL)
 
-Prisma connects directly to the Supabase PostgreSQL instance. The singleton client is in `lib/prisma.ts` (prevents connection exhaustion in dev with hot reload).
+Prisma 7 connects via the `@prisma/adapter-pg` driver adapter (`PrismaPg`) rather than Prisma's native connection. The singleton client is in `lib/prisma.ts` (prevents connection exhaustion in dev with hot reload).
+
+`prisma.config.ts` at the root is a Prisma 7 config file — it loads `.env.local` via `dotenv` and points to `prisma/schema.prisma`. This means `DATABASE_URL` must be in `.env.local`, not `.env`.
 
 Schema models (`prisma/schema.prisma`):
 - `User` — linked to Supabase Auth user by UUID, owns recipes
@@ -50,8 +52,10 @@ SUPABASE_SERVICE_ROLE_KEY=
 DATABASE_URL=           # Supabase PostgreSQL connection string for Prisma
 ```
 
-`prisma.config.ts` at the root configures Prisma to read `DATABASE_URL` from the environment and points to `prisma/schema.prisma`.
-
 ### Styling
 
 Tailwind CSS v4 via `@tailwindcss/postcss`. No separate `tailwind.config.js` — configuration is handled through PostCSS.
+
+### Dev Utilities
+
+`app/test/page.tsx` is a connection test page (`/test`) that verifies Supabase Auth and Prisma DB connectivity — useful during setup.
