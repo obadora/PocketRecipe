@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Start development server (http://localhost:3000)
 npm run build    # Build for production
 npm run lint     # Run ESLint
+npm test         # Run tests (Vitest, single run)
+npm run test:watch  # Run tests in watch mode
 
 # Prisma
 npx prisma migrate dev   # Apply migrations and regenerate client
@@ -49,12 +51,29 @@ Required in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-DATABASE_URL=           # Supabase PostgreSQL connection string for Prisma
+DATABASE_URL=                  # Supabase PostgreSQL connection string for Prisma
+NEXT_PUBLIC_SITE_URL=          # Full origin URL (e.g. http://localhost:3000) for OAuth redirects
 ```
 
 ### Styling
 
 Tailwind CSS v4 via `@tailwindcss/postcss`. No separate `tailwind.config.js` — configuration is handled through PostCSS.
+
+### Route Structure
+
+- `app/(auth)/` — Route group for unauthenticated pages (`/login`, `/signup`). Server Actions are in `app/(auth)/actions.ts`.
+- `app/auth/callback/route.ts` — OAuth callback handler (`/auth/callback`). Exchanges code for session and upserts the user into Prisma DB.
+- All other routes are protected: `middleware.ts` redirects unauthenticated users to `/login`.
+
+### User Sync Pattern
+
+Supabase Auth and Prisma `User` table are kept in sync via `prisma.user.upsert` at two entry points:
+1. `signIn` in `app/(auth)/actions.ts` — on email/password login
+2. `app/auth/callback/route.ts` — on OAuth (Google) login
+
+### Testing
+
+Vitest is configured in `vitest.config.ts` (node environment). Tests live alongside source files (e.g. `app/(auth)/actions.test.ts`). Use `vi.hoisted()` when defining mock variables used inside `vi.mock()` factory functions.
 
 ### Dev Utilities
 
