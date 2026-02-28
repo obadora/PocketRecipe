@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ユーザー（Supabase Authと連携）
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  recipes Recipe[]
+
+  @@map("users")
+}
+
+// レシピ
+model Recipe {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  servings    Int?
+  cookTime    Int?     @map("cook_time") // 分
+  imageUrl    String?  @map("image_url")
+  sourceUrl   String?  @map("source_url")
+  sourceType  String?  @map("source_type") // 'url' | 'photo' | 'manual'
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients Ingredient[]
+  steps       Step[]
+  categories  RecipeCategory[]
+
+  @@map("recipes")
+}
+
+// 材料
+model Ingredient {
+  id       String  @id @default(uuid())
+  recipeId String  @map("recipe_id")
+  name     String
+  amount   String?
+  unit     String?
+  order    Int
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("ingredients")
+}
+
+// 手順
+model Step {
+  id          String @id @default(uuid())
+  recipeId    String @map("recipe_id")
+  description String
+  order       Int
+  imageUrl    String? @map("image_url")
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("steps")
+}
+
+// カテゴリマスタ
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  recipes RecipeCategory[]
+
+  @@map("categories")
+}
+
+// レシピ-カテゴリ中間テーブル
+model RecipeCategory {
+  recipeId   String @map("recipe_id")
+  categoryId String @map("category_id")
+
+  recipe   Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([recipeId, categoryId])
+  @@map("recipe_categories")
+}
